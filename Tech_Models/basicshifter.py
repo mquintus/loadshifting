@@ -30,16 +30,16 @@ class Basic_Shifter:
         if take_hour < 0:
             continue
         distance = shed_hour - take_hour
-        final_rte = (distance * (-1 * tech['rte']))
+        final_rte = ((1 - tech['rte']) ** distance)
         
         
         price_difference = prices.loc[shed_hour, 'Total'] - prices.loc[take_hour, 'Total'] 
         
-        
         rating = price_difference + final_rte
+        print("price_difference", price_difference, "final_rte", final_rte, "rating", rating)
         
         if rating > 0:
-            print(shed_hour, take_hour, "final_rte, price_difference", final_rte, price_difference, "rating", rating)
+            #print(shed_hour, take_hour, "final_rte, price_difference", final_rte, price_difference, "rating", rating)
             ratings[take_hour] = rating
             #print("positive decision")
         else:
@@ -94,10 +94,13 @@ class Basic_Shifter:
         possible_hours_to_shift_to = range(shed_hour - tech['shift_window'], shed_hour, 1)
         possible_hours_to_shift_to = Basic_Shifter.weigh_possible_hours_to_shift_to(shed_hour, possible_hours_to_shift_to, schedule_orig, tech, price)
 
+        print("possible_hours_to_shift_to", possible_hours_to_shift_to)
+        
         for take_hour in possible_hours_to_shift_to:
-            take_hour += day_slice.start
+            #take_hour += day_slice.start
             if take_hour < day_slice.start:
                 continue
+            print("take_hour",take_hour)
                 
             take_price = price.loc[take_hour, 'Total']
             shift_schedule.loc[take_hour, 'orig'] = schedule_orig.loc[take_hour, enduse]
