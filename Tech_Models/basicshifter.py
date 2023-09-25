@@ -35,8 +35,8 @@ class Basic_Shifter:
         
         price_difference = prices.loc[shed_hour, 'Total'] - prices.loc[take_hour, 'Total'] 
         
-        rating = price_difference + final_rte
-        print("price_difference", price_difference, "final_rte", final_rte, "rating", rating)
+        rating = price_difference * final_rte
+        #print("price_difference", price_difference, "final_rte", final_rte, "rating", rating)
         
         if rating > 0:
             #print(shed_hour, take_hour, "final_rte, price_difference", final_rte, price_difference, "rating", rating)
@@ -84,6 +84,9 @@ class Basic_Shifter:
         load_in_that_hour = schedule_orig.loc[shed_hour, enduse]
         sheddable_amount = tech['base_load_frac'] * load_in_that_hour
         ceil_take_amount = schedule_orig.loc[shed_hour, enduse].max()
+        if 'ceil_take_amount' in tech:
+            ceil_take_amount = tech['ceil_take_amount'] 
+        #print("ceil_take_amount", ceil_take_amount)
         rte_factor = (1 + (1 - tech['rte']))
 
         shift_schedule.loc[shed_hour, 'orig'] = load_in_that_hour
@@ -100,7 +103,7 @@ class Basic_Shifter:
             #take_hour += day_slice.start
             if take_hour < day_slice.start:
                 continue
-            print("take_hour",take_hour)
+            #print("take_hour",take_hour)
                 
             take_price = price.loc[take_hour, 'Total']
             shift_schedule.loc[take_hour, 'orig'] = schedule_orig.loc[take_hour, enduse]
@@ -115,13 +118,16 @@ class Basic_Shifter:
                 
             shed_amount = -1 * sheddable_amount
             take_amount = sheddable_amount * rte_factor
-            print(shed_hour, take_price, shed_amount, take_amount)
+            #print(shed_hour, take_price, shed_amount, take_amount)
 
+            
             has_ceiling = True
             if has_ceiling:
-                if take_amount > ceil_take_amount - shift_schedule.loc[take_hour, 'take']:
+                take_already = shift_schedule.loc[take_hour, 'take'] + shift_schedule.loc[take_hour, 'orig'] - shift_schedule.loc[take_hour, 'shed']
+                #print("take_amount + take_already > ceil_take_amount", take_amount, take_already, ceil_take_amount)
+                if take_amount + take_already > ceil_take_amount:
                     print('ceil')
-                    take_amount = ceil_take_amount - shift_schedule.loc[take_hour, 'take']
+                    take_amount = max(0, ceil_take_amount - take_already)
                     shed_amount = -1 * (take_amount / rte_factor)
 
 
